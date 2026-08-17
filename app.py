@@ -4,6 +4,8 @@ import numpy as np
 import joblib
 import os
 
+from src.genai_analyzer import generate_threat_analysis
+
 # ============================================================
 # CONFIGURATION
 # ============================================================
@@ -176,6 +178,7 @@ if st.button("🔍 Detect Threats", type="primary"):
     # RESULTS
     # ========================================================
 
+    st.session_state["detection_complete"] = True
     st.success("Threat detection completed!")
 
     result_df = df.copy()
@@ -195,6 +198,24 @@ if st.button("🔍 Detect Threats", type="primary"):
     benign_count = counts.get("BENIGN", 0)
 
     threat_count = total - benign_count
+
+    # Save results for Generative AI analysis
+    st.session_state["predicted_labels"] = predicted_labels
+    st.session_state["total"] = total
+    st.session_state["benign_count"] = benign_count
+    st.session_state["threat_count"] = threat_count
+
+    try:
+        probabilities = model.predict_proba(X)
+
+        confidence = float(
+            np.max(probabilities, axis=1).mean() * 100
+        )
+
+    except Exception:
+        confidence = 0.0
+
+    st.session_state["confidence"] = confidence
 
     c1, c2, c3 = st.columns(3)
 
@@ -242,6 +263,7 @@ if st.button("🔍 Detect Threats", type="primary"):
         distribution.set_index("Threat")
     )
 
+
     # ========================================================
     # PREDICTION RESULTS
     # ========================================================
@@ -284,11 +306,65 @@ if st.button("🔍 Detect Threats", type="primary"):
             "Actual": actual_labels,
             "Predicted": predicted_labels
         })
-
         st.dataframe(
             comparison.head(1000),
             use_container_width=True
         )
+
+# ============================================================
+# GENERATIVE AI ANALYSIS
+# ============================================================
+
+if st.session_state.get("detection_complete", False):
+
+    st.divider()
+
+    st.subheader("🤖 Generative AI Threat Analysis")
+
+    st.write(
+        "Use Generative AI to explain the machine-learning "
+        "detection results and provide defensive recommendations."
+    )
+
+    if st.button("🤖 Generate AI Security Analysis"):
+
+        # Retrieve saved detection results
+        saved_labels = st.session_state["predicted_labels"]
+        saved_total = st.session_state["total"]
+        saved_benign = st.session_state["benign_count"]
+        saved_threat = st.session_state["threat_count"]
+
+        saved_counts = pd.Series(saved_labels).value_counts()
+
+        saved_top_threats = saved_counts.to_dict()
+
+        saved_primary_threat = (
+            saved_counts
+            .drop(labels=["BENIGN"], errors="ignore")
+            .idxmax()
+            if saved_threat > 0
+            else "BENIGN"
+        )
+
+        saved_confidence = st.session_state.get(
+            "confidence",
+            0.0
+        )
+
+        with st.spinner(
+            "Generative AI is analyzing the detection results..."
+        ):
+
+            ai_analysis = generate_threat_analysis(
+                prediction=str(saved_primary_threat),
+                confidence=saved_confidence,
+                total_flows=saved_total,
+                threat_flows=saved_threat,
+                benign_flows=saved_benign,
+                top_threats=saved_top_threats
+            )
+
+        st.markdown(ai_analysis)
 
 # ============================================================
 # FOOTER
@@ -297,5 +373,5 @@ if st.button("🔍 Detect Threats", type="primary"):
 st.divider()
 
 st.caption(
-    "AI Cyber Threat Detection | Random Forest"
+    "AI Cyber Threat Detection | Random Forest + Generative AI"
 )
