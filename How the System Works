@@ -1,0 +1,504 @@
+🔍 How the System Works
+1. Dataset Collection
+
+The project uses the:
+
+CIC-IDS-2017 Dataset
+
+The dataset contains network-flow information representing normal and malicious network activity.
+
+2. Data Preprocessing
+
+The raw CSV files are processed using Python and Pandas.
+
+The preprocessing stage includes:
+
+Reading CSV files
+Combining required data
+Cleaning the data
+Handling invalid values
+Handling missing values
+Preparing data for Machine Learning
+3. Training Dataset Creation
+
+A smaller training dataset was created to make Machine Learning training more practical on hardware with limited RAM.
+
+The training dataset contains approximately:
+
+299,991 rows
+79 columns
+
+The 79 columns consist of:
+
+78 network-flow features
+1 target label
+4. Feature and Label Separation
+
+The Label column is separated from the network-flow features.
+
+The Machine Learning model uses:
+
+78 features
+
+to predict the traffic category.
+
+5. Label Encoding
+
+Text-based attack labels are converted into numerical values using:
+
+LabelEncoder
+
+The encoder is saved using Joblib so that predictions can later be converted back into their original attack names.
+
+6. Train/Test Split
+
+The dataset is divided into:
+
+80% Training Data
+20% Testing Data
+7. Random Forest Training
+
+A Random Forest Classifier is trained using the prepared network-flow data.
+
+Random Forest was selected because it works well with tabular datasets and can handle a relatively large number of numerical features.
+
+8. Model Evaluation
+
+The trained model is evaluated using:
+
+Accuracy
+Precision
+Recall
+F1-score
+Classification Report
+9. Model Saving
+
+The trained model and label encoder are saved using Joblib.
+
+models/
+├── cyber_threat_model.pkl
+└── label_encoder.pkl
+🧠 Machine Learning Model
+Model Used
+Random Forest Classifier
+
+The trained model uses:
+
+78 network-flow features
+14 traffic/attack classes
+
+The original training data contained 15 labels.
+
+However, the Heartbleed class had only one sample in the selected training dataset.
+
+Because at least two samples are required for the stratified train/test split, the Heartbleed class was removed during model training.
+
+Therefore, the final trained model contains:
+
+14 classes
+🏷️ Supported Classes
+
+The current trained model can classify:
+
+BENIGN
+Bot
+DDoS
+DoS GoldenEye
+DoS Hulk
+DoS Slowhttptest
+DoS slowloris
+FTP-Patator
+Infiltration
+PortScan
+SSH-Patator
+Web Attack - Brute Force
+Web Attack - Sql Injection
+Web Attack - XSS
+📊 Model Performance
+
+On the current train/test split, the Random Forest model achieved:
+
+Accuracy: 99.68%
+
+The model performed particularly well on several classes such as:
+
+BENIGN
+DDoS
+DoS Hulk
+PortScan
+FTP-Patator
+DoS GoldenEye
+
+However, some attack categories contain very few training examples.
+
+For example:
+
+Infiltration has very few samples.
+Web Attack - Sql Injection has very few samples.
+Several other attack categories are highly imbalanced.
+
+Therefore, the reported 99.68% accuracy is specific to the current dataset and train/test split.
+
+It should not be interpreted as a guarantee of real-world cybersecurity detection performance.
+
+🖥️ Streamlit Web Application
+
+The project includes a Streamlit-based web application.
+
+The application allows users to upload network-flow CSV files and run threat detection using the trained Random Forest model.
+
+Main Features
+
+📂 Upload network-flow CSV files
+
+📊 Display dataset information
+
+🔢 Validate the required number of features
+
+🤖 Run the trained Random Forest model
+
+🟢 Count benign network flows
+
+🚨 Count detected threats
+
+📈 Display threat distribution
+
+📋 Display prediction results
+
+⬇️ Download detection results
+
+🧠 Generate AI-powered threat analysis
+
+🛡️ Generate defensive recommendations
+
+🧠 Generative AI Threat Analysis
+
+A new Generative AI component has been integrated into the project.
+
+The Generative AI system uses the Groq API to analyze the results produced by the Random Forest model.
+
+The AI does not perform the original classification.
+
+Instead, the architecture is:
+
+                  Network Flow CSV
+                         │
+                         ▼
+                Random Forest Model
+                         │
+                         ▼
+                 ML Predictions
+                         │
+             ┌───────────┴───────────┐
+             │                       │
+             ▼                       ▼
+      Detection Results       Detection Statistics
+                                     │
+                                     ▼
+                              Generative AI
+                                     │
+                                     ▼
+                            Threat Explanation
+                                     │
+                                     ▼
+                         Defensive Recommendations
+🔐 Separation Between ML and Generative AI
+
+The system deliberately separates detection from explanation.
+
+Random Forest
+
+Responsible for:
+
+Classifying network traffic
+Producing attack predictions
+Calculating detection statistics
+Providing the original ML result
+Generative AI
+
+Responsible for:
+
+Explaining the ML results
+Summarizing the threat situation
+Assigning a qualitative risk level
+Suggesting defensive measures
+Explaining limitations
+
+The Generative AI is instructed not to change the Machine Learning prediction and not to invent evidence that was not supplied to it.
+
+📝 Generative AI Report
+
+The AI-generated analysis contains five sections:
+
+1. Threat Assessment
+
+Provides a human-readable explanation of the detected threat.
+
+Example:
+
+The machine-learning model classifies the current
+traffic as a Distributed Denial-of-Service attack
+with high confidence.
+2. Evidence From Model Results
+
+The AI summarizes information such as:
+
+Total flows
+Threat flows
+Benign flows
+Threat percentage
+Predicted attack class
+Model confidence
+Threat distribution
+3. Risk Level
+
+The AI provides a qualitative risk assessment based only on the supplied ML results.
+
+Possible assessments can include:
+
+Low
+Medium
+High
+Critical
+
+The risk assessment is an interpretation of the available model results and is not itself a replacement for professional security analysis.
+
+4. Recommended Defensive Actions
+
+The AI can provide defensive recommendations appropriate to the detected threat.
+
+For example, for a potential DDoS classification:
+
+Rate limiting
+Traffic filtering
+DDoS mitigation
+Monitoring
+Network segmentation
+Incident response
+ISP/upstream coordination
+
+These recommendations are intended for defensive and educational purposes.
+
+5. Limitations
+
+The AI also identifies limitations in the available information.
+
+For example:
+
+Lack of packet-level information
+Lack of IP information
+Lack of temporal context
+Class imbalance
+Potential false positives
+Limited model interpretability
+🤖 Generative AI Technology
+
+The project currently uses:
+
+Groq API
+
+with:
+
+openai/gpt-oss-20b
+
+The Python implementation is located at:
+
+src/genai_analyzer.py
+
+The main application imports the analyzer using:
+
+from src.genai_analyzer import generate_threat_analysis
+🔐 API Key Security
+
+The Groq API key is not stored directly in the source code.
+
+The application retrieves the key from an environment variable:
+
+os.getenv("GROQ_API_KEY")
+
+The actual .env file is excluded from Git using .gitignore.
+
+The repository contains only:
+
+.env.example
+
+with:
+
+GROQ_API_KEY=
+
+Users should create their own local .env file and provide their own API key.
+
+Important
+
+Never put an actual API key in:
+
+app.py
+src/genai_analyzer.py
+README.md
+requirements.txt
+.env.example
+
+Never commit your actual .env file.
+
+📂 Dataset
+
+This project uses the:
+
+CIC-IDS-2017 Dataset
+
+The original dataset contains network traffic collected for different types of normal and malicious activity.
+
+Due to the large size of the original dataset and the limited hardware used during development, a smaller training dataset was created for model training.
+
+The original dataset files are not included in this GitHub repository.
+
+Users should obtain the dataset from its official source and place the required CSV files in the appropriate data/ directory.
+
+📊 Example Detection
+
+When a network-flow dataset is uploaded, the application can produce results such as:
+
+Total Flows: 225,745
+
+
+Benign: 97,672
+
+
+Threats: 128,073
+
+Example threat distribution:
+
+DDoS: 127,894
+DoS Hulk: 55
+Web Attack - XSS: 42
+Bot: 37
+Web Attack - Brute Force: 23
+DoS Slowhttptest: 16
+Infiltration: 3
+DoS slowloris: 1
+DoS GoldenEye: 1
+SSH-Patator: 1
+
+The Generative AI can then analyze these statistics and produce a human-readable cybersecurity assessment.
+
+🛠️ Technologies Used
+Programming
+Python
+Machine Learning
+Scikit-learn
+Random Forest Classifier
+Label Encoding
+Train/Test Split
+Classification Report
+Generative AI
+Groq API
+openai/gpt-oss-20b
+Data Processing
+Pandas
+NumPy
+Model Storage
+Joblib
+Web Application
+Streamlit
+Visualization
+Matplotlib
+Plotly
+Environment & Security
+python-dotenv
+Environment variables
+Git .gitignore
+Dataset
+CIC-IDS-2017
+📁 Project Structure
+AI-Cyber-Threat-Detection/
+│
+├── app.py
+├── requirements.txt
+├── README.md
+├── .gitignore
+├── .env.example
+│
+├── src/
+│   ├── preprocess.py
+│   ├── create_training_data.py
+│   ├── train_model.py
+│   ├── test_environment.py
+│   └── genai_analyzer.py
+│
+├── models/
+│   ├── cyber_threat_model.pkl
+│   └── label_encoder.pkl
+│
+├── data/
+│   └── README.md
+│
+└── tests/
+📄 Important Files
+app.py
+
+The main Streamlit web application.
+
+It:
+
+Loads the trained model.
+Accepts network-flow CSV files.
+Validates input features.
+Performs threat detection.
+Displays detection statistics.
+Displays threat distribution.
+Provides prediction results.
+Connects ML results to the Generative AI analyzer.
+src/preprocess.py
+
+Processes and cleans the original CIC-IDS-2017 CSV files.
+
+src/create_training_data.py
+
+Creates the smaller training dataset used for Machine Learning.
+
+This was done to make model training more practical on a system with limited RAM.
+
+src/train_model.py
+
+Trains the Random Forest model and evaluates its performance.
+
+It also saves the trained model and label encoder.
+
+src/genai_analyzer.py
+
+Contains the Generative AI threat-analysis functionality.
+
+It:
+
+Reads the Groq API key from the environment.
+Sends ML detection statistics to the Groq model.
+Generates a cybersecurity explanation.
+Generates a risk assessment.
+Provides defensive recommendations.
+Reports limitations.
+
+The Generative AI does not replace the Random Forest classifier.
+
+models/cyber_threat_model.pkl
+
+The trained Random Forest Machine Learning model.
+
+models/label_encoder.pkl
+
+The label encoder used to convert between numerical class values and attack names.
+
+requirements.txt
+
+Contains the Python packages required to run the project.
+
+Important AI-related packages include:
+
+groq
+python-dotenv
+.env.example
+
+Template for configuring the Groq API key:
+
+GROQ_API_KEY=
+
+The actual API key must remain in the developer's local environment and must not be committed to Git
